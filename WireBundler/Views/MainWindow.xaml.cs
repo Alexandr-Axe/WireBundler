@@ -14,6 +14,7 @@ namespace WireBundler.Views
     {
         private readonly InputParser _inputParser = new();
         private readonly WirePackingSolver _wirePackingSolver = new();
+        private readonly BundleRenderer _bundleRenderer = new();
 
         private InputData? _inputData;
         private BundleResult? _bundleResult;
@@ -43,6 +44,9 @@ namespace WireBundler.Views
                 BundleDiameterTextBlock.Text = $"Bundle diameter: {_bundleResult.BundleDiameter:F2} mm";
                 ArrangementStatusTextBlock.Text = "Arrangement status: initial arrangement created";
                 WirePositionsTextBox.Text = BuildWirePositionsText(_bundleResult);
+
+                VisualizationCanvas.Children.Clear();
+                _bundleRenderer.Render(VisualizationCanvas, _bundleResult);
             }
             catch (Exception ex)
             {
@@ -53,11 +57,14 @@ namespace WireBundler.Views
                     MessageBoxImage.Error);
 
                 _inputData = null;
+                _bundleResult = null;
                 SelectedFileTextBlock.Text = "No file loaded yet.";
                 InputStatusTextBlock.Text = "Input loading failed.";
                 WireCountTextBlock.Text = "Wire count: -";
                 BundleDiameterTextBlock.Text = "Bundle diameter: -";
                 ArrangementStatusTextBlock.Text = "Arrangement status: waiting for implementation";
+                WirePositionsTextBox.Text = string.Empty;
+                VisualizationCanvas.Children.Clear();
             }
         }
 
@@ -73,6 +80,14 @@ namespace WireBundler.Views
             }
 
             return sb.ToString();
+        }
+        private void VisualizationCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_bundleResult != null)
+            {
+                VisualizationCanvas.Children.Clear();
+                _bundleRenderer.Render(VisualizationCanvas, _bundleResult);
+            }
         }
     }
 }

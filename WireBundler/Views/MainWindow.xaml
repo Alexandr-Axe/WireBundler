@@ -105,7 +105,8 @@
 
                 <Canvas x:Name="VisualizationCanvas"
                         Background="#FFF8F8F8"
-                        Margin="0,40,0,0"/>
+                        Margin="0,40,0,0"
+                        SizeChanged="VisualizationCanvas_SizeChanged"/>
             </Grid>
         </Border>
     </Grid>
