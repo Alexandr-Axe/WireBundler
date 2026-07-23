@@ -1,4 +1,6 @@
 ﻿using Microsoft.Win32;
+using System.IO;
+using System.Text;
 using System.Windows;
 using WireBundler.Models;
 using WireBundler.Services;
@@ -11,7 +13,10 @@ namespace WireBundler.Views
     public partial class MainWindow : Window
     {
         private readonly InputParser _inputParser = new();
+        private readonly WirePackingSolver _wirePackingSolver = new();
+
         private InputData? _inputData;
+        private BundleResult? _bundleResult;
         public MainWindow()
         {
             InitializeComponent();
@@ -30,13 +35,14 @@ namespace WireBundler.Views
             try
             {
                 _inputData = _inputParser.LoadFromFile(openFileDialog.FileName);
-                SelectedFileTextBlock.Text = $"File: {System.IO.Path.GetFileName(openFileDialog.FileName)}";
+                _bundleResult = _wirePackingSolver.Solve(_inputData);
+
+                SelectedFileTextBlock.Text = $"File: {Path.GetFileName(openFileDialog.FileName)}";
                 InputStatusTextBlock.Text = "Input loaded successfully.";
                 WireCountTextBlock.Text = $"Wire count: {_inputData.Radii.Count}";
-                BundleDiameterTextBlock.Text = "Bundle diameter: not calculated yet";
-                ArrangementStatusTextBlock.Text = "Arrangement status: input loaded, solver not implemented";
-
-                MessageBox.Show("Radii: " + string.Join("\n", _inputData.Radii));
+                BundleDiameterTextBlock.Text = $"Bundle diameter: {_bundleResult.BundleDiameter:F2} mm";
+                ArrangementStatusTextBlock.Text = "Arrangement status: initial arrangement created";
+                WirePositionsTextBox.Text = BuildWirePositionsText(_bundleResult);
             }
             catch (Exception ex)
             {
@@ -53,6 +59,20 @@ namespace WireBundler.Views
                 BundleDiameterTextBlock.Text = "Bundle diameter: -";
                 ArrangementStatusTextBlock.Text = "Arrangement status: waiting for implementation";
             }
+        }
+
+        private string BuildWirePositionsText(BundleResult bundleResult)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < bundleResult.Wires.Count; i++)
+            {
+                var wire = bundleResult.Wires[i];
+                sb.AppendLine(
+                    $"Wire {i + 1}: r={wire.Radius:F2}, x={wire.X:F2}, y={wire.Y:F2}");
+            }
+
+            return sb.ToString();
         }
     }
 }

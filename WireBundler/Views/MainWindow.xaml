@@ -76,6 +76,16 @@
 
                     <TextBlock x:Name="ArrangementStatusTextBlock"
                                Text="Arrangement status: waiting for implementation"/>
+                    
+                    <TextBlock Text="Wire positions:"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,4"/>
+
+                    <TextBox x:Name="WirePositionsTextBox"
+                             Height="140"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
             </Border>
         </Grid>
