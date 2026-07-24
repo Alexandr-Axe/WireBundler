@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Windows;
+using WireBundler.Infrastructure;
 using WireBundler.Models;
 using WireBundler.Services;
 
@@ -21,6 +22,10 @@ namespace WireBundler.Views
         public MainWindow()
         {
             InitializeComponent();
+
+            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WireBundler.log");
+            AppLog.Initialize(logFilePath);
+            AppLog.Write(LogLevel.INF, "Application started.");
         }
 
         private void LoadFileButton_Click(object sender, RoutedEventArgs e)

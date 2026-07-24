@@ -26,21 +26,34 @@ namespace WireBundler.Services
         public BundleResult Solve(InputData inputData)
         {
             if (inputData == null || inputData.Radii.Count == 0)
+            {
+                AppLog.Write(LogLevel.ERR, "WirePackingSolver.Solve failed because input data is null or empty.");
                 throw new ArgumentException("Input data is null or empty");
+            }
+
+            AppLog.Write(LogLevel.INF, $"Wire packing solver started with {inputData.Radii.Count} input radii.");
 
             List<double> sortedRadii = inputData.Radii
                 .OrderByDescending(r => r)
                 .ToList();
 
+            AppLog.Write(LogLevel.DEB, $"Radii sorted in descending order: {string.Join("; ", sortedRadii.Select(r => r.ToString("F2")))}");
+
             BundleResult result = new();
 
             foreach (double newWireRadius in sortedRadii)
             {
+                AppLog.Write(LogLevel.DEB, $"Placing wire with radius {newWireRadius:F2}.");
+
                 WirePlacement newPlacement = CreateWirePlacement(result.Wires, newWireRadius);
                 result.Wires.Add(newPlacement);
+
+                AppLog.Write(LogLevel.DEB, $"Placed wire: r={newPlacement.Radius:F2}, x={newPlacement.X:F2}, y={newPlacement.Y:F2}");
             }
 
             result.BundleRadius = CalculateBundleRadius(result.Wires);
+
+            AppLog.Write(LogLevel.INF, $"Wire packing solver finished. Bundle diameter: {result.BundleDiameter:F2} mm.");
 
             return result;
         }
@@ -97,6 +110,8 @@ namespace WireBundler.Services
         {
             if (alreadyPlacedWires.Count == 0)
             {
+                AppLog.Write(LogLevel.DEB, $"First wire placed at origin with radius {newWireRadius:F2}.");
+
                 return new WirePlacement
                 {
                     Radius = newWireRadius,
@@ -107,6 +122,7 @@ namespace WireBundler.Services
 
             if (alreadyPlacedWires.Count == 1)
             {
+                AppLog.Write(LogLevel.DEB, $"Second wire placed next to the first wire with radius {newWireRadius:F2}.");
                 return new WirePlacement
                 {
                     Radius = newWireRadius,
@@ -152,13 +168,20 @@ namespace WireBundler.Services
                 }
             }
 
+            AppLog.Write(LogLevel.DEB, $"Generated {allCandidatePlacements.Count} candidate placements for wire radius {newWireRadius:F2}.");
+
             List<WirePlacement> validCandidatePlacements = allCandidatePlacements
                 .Where(candidatePlacement =>
                     !DoesOverlapWithAnyPlacedWire(candidatePlacement, alreadyPlacedWires))
                 .ToList();
 
+            AppLog.Write(LogLevel.DEB, $"Found {validCandidatePlacements.Count} valid candidate placements for wire radius {newWireRadius:F2}.");
+
             if (validCandidatePlacements.Count == 0)
+            {
+                AppLog.Write(LogLevel.ERR, $"No valid placement found for wire radius {newWireRadius:F2}.");
                 throw new InvalidOperationException("No valid placement found for the next wire.");
+            }
 
             WirePlacement bestPlacement = validCandidatePlacements[0];
             double smallestBundleRadius = CalculateBundleRadius(alreadyPlacedWires, bestPlacement);
@@ -175,6 +198,8 @@ namespace WireBundler.Services
                     bestPlacement = currentCandidate;
                 }
             }
+
+            AppLog.Write(LogLevel.DEB, $"Best placement selected: r={bestPlacement.Radius:F2}, x={bestPlacement.X:F2}, y={bestPlacement.Y:F2}, bundle radius={smallestBundleRadius:F2}");
 
             return bestPlacement;
         }

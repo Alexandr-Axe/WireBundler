@@ -24,7 +24,12 @@ namespace WireBundler.Services
         public void Render(Canvas canvas, BundleResult bundleResult)
         {
             if (bundleResult == null || bundleResult.Wires.Count == 0 || canvas.ActualWidth <= 0 || canvas.ActualHeight <= 0)
+            {
+                AppLog.Write(LogLevel.ERR, "BundleRenderer.Render failed - invalid bundle result or canvas size.");
                 throw new ArgumentException("Invalid bundle result or canvas size.");
+            }
+
+            AppLog.Write(LogLevel.INF, $"Rendering bundle with {bundleResult.Wires.Count} wires and diameter {bundleResult.BundleDiameter:F2} mm.");
 
             double bundleRadius = bundleResult.BundleRadius;
             double availableWidth = Math.Max(1, canvas.ActualWidth - 2 * Padding);
@@ -43,6 +48,8 @@ namespace WireBundler.Services
             {
                 DrawWire(canvas, wire, scale, canvasCenterX, canvasCenterY);
             }
+
+            AppLog.Write(LogLevel.INF, "Bundle rendering finished successfully.");
         }
 
         private void DrawWire(Canvas canvas, WirePlacement wire, double scale, double canvasCenterX, double canvasCenterY)
@@ -66,6 +73,8 @@ namespace WireBundler.Services
             Canvas.SetTop(wireEllipse, y - radius);
 
             canvas.Children.Add(wireEllipse);
+
+            AppLog.Write(LogLevel.DEB, $"Rendered wire: r={wire.Radius:F2}, x={wire.X:F2}, y={wire.Y:F2}");
         }
 
         private void DrawBundleBoundary(Canvas canvas, double bundleRadius, double scale, double canvasCenterX, double canvasCenterY)
@@ -85,6 +94,8 @@ namespace WireBundler.Services
             Canvas.SetTop(bundleEllipse, canvasCenterY - diameter / 2.0);
 
             canvas.Children.Add(bundleEllipse);
+
+            AppLog.Write(LogLevel.DEB, $"Rendered bundle boundary with radius {bundleRadius:F2}.");
         }
     }
 }
