@@ -309,6 +309,27 @@ namespace WireBundler.Services
                 Y = placedWire.Y
             });
 
+            fallbackPlacements.Add(new WirePlacement
+            {
+                Radius = newWireRadius,
+                X = placedWire.X - distanceBetweenCenters,
+                Y = placedWire.Y
+            });
+
+            fallbackPlacements.Add(new WirePlacement
+            {
+                Radius = newWireRadius,
+                X = placedWire.X,
+                Y = placedWire.Y + distanceBetweenCenters
+            });
+
+            fallbackPlacements.Add(new WirePlacement
+            {
+                Radius = newWireRadius,
+                X = placedWire.X,
+                Y = placedWire.Y - distanceBetweenCenters
+            });
+
             return fallbackPlacements;
         }
     }
