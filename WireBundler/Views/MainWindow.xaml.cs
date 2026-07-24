@@ -68,6 +68,11 @@ namespace WireBundler.Views
             }
         }
 
+        /// <summary>
+        /// Builds a human-readable text representation of all wire positions.
+        /// </summary>
+        /// <param name="bundleResult">The calculated bundle result.</param>
+        /// <returns>A formatted string containing all wire positions.</returns>
         private string BuildWirePositionsText(BundleResult bundleResult)
         {
             StringBuilder sb = new StringBuilder();

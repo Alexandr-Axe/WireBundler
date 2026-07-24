@@ -8,9 +8,19 @@ using WireBundler.Models;
 
 namespace WireBundler.Services
 {
+    /// <summary>
+    /// Renders the bundle of wires on a WPF Canvas based on the provided BundleResult.
+    /// </summary>
     public class BundleRenderer
     {
         private const double Padding = 20.0;
+
+        /// <summary>
+        /// Renders the bundle of wires on the specified Canvas based on the provided BundleResult.
+        /// </summary>
+        /// <param name="canvas">The WPF Canvas on which to render the bundle.</param>
+        /// <param name="bundleResult">The result of the wire bundling process.</param>
+        /// <exception cref="ArgumentException"></exception>
         public void Render(Canvas canvas, BundleResult bundleResult)
         {
             if (bundleResult == null || bundleResult.Wires.Count == 0 || canvas.ActualWidth <= 0 || canvas.ActualHeight <= 0)

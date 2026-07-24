@@ -7,8 +7,19 @@ using WireBundler.Models;
 
 namespace WireBundler.Services
 {
+    /// <summary>
+    /// Parses input data from a text file and loads it into an InputData object.
+    /// </summary>
     public class InputParser
     {
+        /// <summary>
+        /// Loads input data from a specified text file and returns an InputData object containing the parsed radii values.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="FormatException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public InputData LoadFromFile(string filePath)
         {
             InputData inputData = new();
