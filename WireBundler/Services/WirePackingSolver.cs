@@ -50,7 +50,10 @@ namespace WireBundler.Services
 
                 AppLog.Write(LogLevel.DEB, $"Placed wire: r={newPlacement.Radius:F2}, x={newPlacement.X:F2}, y={newPlacement.Y:F2}");
             }
+            
+            RecenterLayout(result.Wires);
 
+            AppLog.Write(LogLevel.INF, "Recentered wire layout before final bundle radius calculation.");
             result.BundleRadius = CalculateBundleRadius(result.Wires);
 
             AppLog.Write(LogLevel.INF, $"Wire packing solver finished. Bundle diameter: {result.BundleDiameter:F2} mm.");
@@ -357,5 +360,39 @@ namespace WireBundler.Services
 
             return fallbackPlacements;
         }
+
+        private void RecenterLayout(List<WirePlacement> placedWires)
+        {
+            if(placedWires.Count == 0)
+                return;
+
+            double minX = double.MaxValue;
+            double maxX = double.MinValue;
+            double minY = double.MaxValue;
+            double maxY = double.MinValue;
+
+            foreach (WirePlacement wire in placedWires)
+            {
+                minX = Math.Min(minX, wire.X - wire.Radius);
+                maxX = Math.Max(maxX, wire.X + wire.Radius);
+                minY = Math.Min(minY, wire.Y - wire.Radius);
+                maxY = Math.Max(maxY, wire.Y + wire.Radius);
+            }
+
+            // Calculate the center of the bounding box
+
+            double centerX = (minX + maxX) / 2;
+            double centerY = (minY + maxY) / 2;
+
+            // Recenter all wires around the origin
+            foreach (WirePlacement wire in placedWires)
+            {
+                wire.X -= centerX;
+                wire.Y -= centerY;
+            }
+
+            AppLog.Write(LogLevel.DEB, $"Recentered layout around ({centerX:F2}, {centerY:F2}).");
+        }
+
     }
 }
