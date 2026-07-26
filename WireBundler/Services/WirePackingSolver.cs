@@ -16,6 +16,11 @@ namespace WireBundler.Services
         private const double Epsilon = 1e-6;
 
         /// <summary>
+        /// Number of evenly spaced angular directions used for fallback placements around a single wire.
+        /// </summary>
+        private const int FallbackDirectionCount = 12;
+
+        /// <summary>
         /// Solves the wire packing problem for the given input data.
         /// </summary>
         /// <param name="inputData">Input data containing all wire radii.</param>
@@ -326,10 +331,32 @@ namespace WireBundler.Services
         /// <returns>An enumeration of possible placements for the new wire.</returns>
         private IEnumerable<WirePlacement> GetFallbackPlacementsAroundOneWire(WirePlacement placedWire, double newWireRadius)
         {
+            if (FallbackDirectionCount < 1)
+            {
+                AppLog.Write(LogLevel.ERR, "FallbackDirectionCount must be at least 1.");
+                throw new InvalidOperationException("FallbackDirectionCount must be at least 1.");
+            }
+
             List<WirePlacement> fallbackPlacements = new();
 
             double distanceBetweenCenters = placedWire.Radius + newWireRadius;
 
+            for (int directionIndex = 0; directionIndex < FallbackDirectionCount; directionIndex++)
+            {
+                double angle = 2.0 * Math.PI * directionIndex / FallbackDirectionCount;
+
+                double offsetX = distanceBetweenCenters * Math.Cos(angle);
+                double offsetY = distanceBetweenCenters * Math.Sin(angle);
+
+                fallbackPlacements.Add(new WirePlacement
+                {
+                    Radius = newWireRadius,
+                    X = placedWire.X + offsetX,
+                    Y = placedWire.Y + offsetY
+                });
+            }
+
+            /*
             fallbackPlacements.Add(new WirePlacement
             {
                 Radius = newWireRadius,
@@ -356,7 +383,7 @@ namespace WireBundler.Services
                 Radius = newWireRadius,
                 X = placedWire.X,
                 Y = placedWire.Y - distanceBetweenCenters
-            });
+            });*/
 
             return fallbackPlacements;
         }
