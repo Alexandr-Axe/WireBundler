@@ -99,5 +99,49 @@ namespace WireBundler.Views
                 _bundleRenderer.Render(VisualizationCanvas, _bundleResult);
             }
         }
+
+        private void RecomputeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_inputData == null)
+                return;
+
+            try
+            {
+                if (int.TryParse(FallbackDirectionCountTextBox.Text, out int fallbackDirections))
+                {
+                    _wirePackingSolver.FallbackDirectionCount = fallbackDirections;
+                }
+
+                if (int.TryParse(CoarseSurvivorCountTextBox.Text, out int coarseSurvivors))
+                {
+                    _wirePackingSolver.CoarseSurvivorCount = coarseSurvivors;
+                }
+
+                if (double.TryParse(FineAngularOffsetDegreesTextBox.Text,
+                                    out double fineOffsetDegrees))
+                {
+                    _wirePackingSolver.FineAngularOffsetDegrees = fineOffsetDegrees;
+                }
+
+                _bundleResult = _wirePackingSolver.Solve(_inputData);
+
+                BundleDiameterTextBlock.Text =
+                    $"Bundle diameter: {_bundleResult.BundleDiameter:F2} mm";
+                ArrangementStatusTextBlock.Text =
+                    "Arrangement status: recomputed with debug settings";
+                WirePositionsTextBox.Text = BuildWirePositionsText(_bundleResult);
+
+                VisualizationCanvas.Children.Clear();
+                _bundleRenderer.Render(VisualizationCanvas, _bundleResult);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to recompute bundle.\n\n{ex.Message}",
+                    "Solver Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
     }
 }

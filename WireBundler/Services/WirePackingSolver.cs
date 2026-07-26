@@ -14,11 +14,25 @@ namespace WireBundler.Services
         /// Small tolerance used to reduce floating-point comparison errors.
         /// </summary>
         private const double Epsilon = 1e-6;
-
+        /*
         /// <summary>
         /// Number of evenly spaced angular directions used for fallback placements around a single wire.
         /// </summary>
-        private const int FallbackDirectionCount = 360;
+        private const int FallbackDirectionCount = 8;
+
+        /// <summary>
+        /// Number of coarse survivor placements to keep for further refinement in the fine search phase.
+        /// </summary>
+        private const int CoarseSurvivorCount = 2;
+
+        /// <summary>
+        /// Angular offset in degrees used for fine placement attempts around a single wire.
+        /// </summary>
+        private const double FineAngularOffsetDegrees = 15.0;
+        */
+        public int FallbackDirectionCount { get; set; } = 8;
+        public int CoarseSurvivorCount { get; set; } = 2;
+        public double FineAngularOffsetDegrees { get; set; } = 15.0;
 
         /// <summary>
         /// Solves the wire packing problem for the given input data.
@@ -214,7 +228,7 @@ namespace WireBundler.Services
             foreach (WirePlacement placedWire in alreadyPlacedWires)
             {
                 allCandidatePlacements.AddRange(
-                    GetFallbackPlacementsAroundOneWire(placedWire, newWireRadius));
+                    GetFallbackPlacementsAroundOneWire(placedWire, newWireRadius, alreadyPlacedWires));
             }
 
             for (int firstIndex = 0; firstIndex < alreadyPlacedWires.Count; firstIndex++)
@@ -385,7 +399,7 @@ namespace WireBundler.Services
         /// <param name="placedWire">The wire that is already placed.</param>
         /// <param name="newWireRadius">The radius of the new wire.</param>
         /// <returns>An enumeration of possible placements for the new wire.</returns>
-        private IEnumerable<WirePlacement> GetFallbackPlacementsAroundOneWire(WirePlacement placedWire, double newWireRadius)
+        private IEnumerable<WirePlacement> GetFallbackPlacementsAroundOneWire(WirePlacement placedWire, double newWireRadius, List<WirePlacement> alreadyPlacedWires)
         {
             if (FallbackDirectionCount < 1)
             {
@@ -393,9 +407,49 @@ namespace WireBundler.Services
                 throw new InvalidOperationException("FallbackDirectionCount must be at least 1.");
             }
 
-            List<WirePlacement> fallbackPlacements = new();
+            List<WirePlacement> allFallBackPlacements = new();
 
-            double distanceBetweenCenters = placedWire.Radius + newWireRadius;
+            List<double> fallbackAngles = Enumerable
+                .Range(0, FallbackDirectionCount)
+                .Select(i => 2.0 * Math.PI * i / FallbackDirectionCount)
+                .ToList();
+
+            List<WirePlacement> coarseCandidates = GenerateFallbackCandidatesForAngles(placedWire, newWireRadius, fallbackAngles)
+                .ToList();
+
+            List<(WirePlacement placement, double radius)> scoredCoarse = coarseCandidates
+                .Select(candidate => (Placement: candidate, Radius: CalculateBundleRadius(alreadyPlacedWires, candidate)))
+                .OrderBy(pair => pair.Radius)
+                .ToList();
+
+            List<(WirePlacement placement, double radius)> bestCoarse = scoredCoarse
+                .Take(CoarseSurvivorCount)
+                .ToList();
+
+            foreach (var (placement, radius) in bestCoarse)
+            {
+                double baseAngle = Math.Atan2(
+                    placement.Y - placedWire.Y,
+                    placement.X - placedWire.X);
+
+                double fineOffsetRadians = FineAngularOffsetDegrees * Math.PI / 180.0;
+
+                List<double> fineAngles = new List<double>
+                {
+                    baseAngle - fineOffsetRadians,
+                    baseAngle,
+                    baseAngle + fineOffsetRadians
+                };
+
+                allFallBackPlacements.AddRange(
+                    GenerateFallbackCandidatesForAngles(placedWire, newWireRadius, fineAngles));
+            }
+
+            AppLog.Write(LogLevel.DEB, $"Generated {allFallBackPlacements.Count} fallback candidates around one wire.");
+
+            return allFallBackPlacements;
+
+            /*double distanceBetweenCenters = placedWire.Radius + newWireRadius;
 
             for (int directionIndex = 0; directionIndex < FallbackDirectionCount; directionIndex++)
             {
@@ -410,7 +464,7 @@ namespace WireBundler.Services
                     X = placedWire.X + offsetX,
                     Y = placedWire.Y + offsetY
                 });
-            }
+            }*/
 
             /*
             fallbackPlacements.Add(new WirePlacement
@@ -441,9 +495,13 @@ namespace WireBundler.Services
                 Y = placedWire.Y - distanceBetweenCenters
             });*/
 
-            return fallbackPlacements;
+            //return fallbackPlacements;
         }
 
+        /// <summary>
+        /// Recenters the layout of the placed wires around the origin (0,0).
+        /// </summary>
+        /// <param name="placedWires">The list of placed wires.</param>
         private void RecenterLayout(List<WirePlacement> placedWires)
         {
             if(placedWires.Count == 0)
@@ -477,5 +535,33 @@ namespace WireBundler.Services
             AppLog.Write(LogLevel.DEB, $"Recentered layout around ({centerX:F2}, {centerY:F2}).");
         }
 
+        /// <summary>
+        /// Generates fallback candidate placements for a new wire around an already placed wire at specified angles.
+        /// </summary>
+        /// <param name="placedWire"></param>
+        /// <param name="newWireRadius"></param>
+        /// <param name="angles"></param>
+        /// <returns></returns>
+        private IEnumerable<WirePlacement> GenerateFallbackCandidatesForAngles(WirePlacement placedWire, double newWireRadius, List<double> angles)
+        {
+            List<WirePlacement> placements = new List<WirePlacement>();
+
+            double distanceBetweenCenters = placedWire.Radius + newWireRadius;
+
+            foreach (double angle in angles)
+            {
+                double offsetX = distanceBetweenCenters * Math.Cos(angle);
+                double offsetY = distanceBetweenCenters * Math.Sin(angle);
+
+                placements.Add(new WirePlacement
+                {
+                    Radius = newWireRadius,
+                    X = placedWire.X + offsetX,
+                    Y = placedWire.Y + offsetY
+                });
+            }
+
+            return placements;
+        }
     }
 }

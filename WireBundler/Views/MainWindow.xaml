@@ -55,39 +55,86 @@
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Padding="12">
-                <StackPanel>
-                    <TextBlock Text="Results"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8"/>
+            <StackPanel Grid.Column="1">
 
-                    <TextBlock x:Name="WireCountTextBlock"
-                               Text="Wire count: -"
-                               Margin="0,0,0,4"/>
+                <Border BorderBrush="Gray"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Results"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
 
-                    <TextBlock x:Name="BundleDiameterTextBlock"
-                               Text="Bundle diameter: -"
-                               Margin="0,0,0,4"/>
+                        <TextBlock x:Name="WireCountTextBlock"
+                                   Text="Wire count: -"
+                                   Margin="0,0,0,4"/>
 
-                    <TextBlock x:Name="ArrangementStatusTextBlock"
-                               Text="Arrangement status: waiting for implementation"/>
-                    
-                    <TextBlock Text="Wire positions:"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,4"/>
+                        <TextBlock x:Name="BundleDiameterTextBlock"
+                                   Text="Bundle diameter: -"
+                                   Margin="0,0,0,4"/>
 
-                    <TextBox x:Name="WirePositionsTextBox"
-                             Height="140"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"/>
-                </StackPanel>
-            </Border>
+                        <TextBlock x:Name="ArrangementStatusTextBlock"
+                                   Text="Arrangement status: waiting for implementation"
+                                   Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Wire positions:"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"/>
+
+                        <TextBox x:Name="WirePositionsTextBox"
+                                 Height="140"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Border>
+
+                <Border BorderBrush="Gray"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12"
+                        Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Solver debug settings"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Fallback directions:"
+                                       Width="140"/>
+                            <TextBox x:Name="FallbackDirectionCountTextBox"
+                                     Width="60"
+                                     Text="8"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Coarse survivors:"
+                                       Width="140"/>
+                            <TextBox x:Name="CoarseSurvivorCountTextBox"
+                                     Width="60"
+                                     Text="2"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Fine offset (deg):"
+                                       Width="140"/>
+                            <TextBox x:Name="FineAngularOffsetDegreesTextBox"
+                                     Width="60"
+                                     Text="15"/>
+                        </StackPanel>
+
+                        <Button Content="Recompute with current settings"
+                                Width="220"
+                                Height="28"
+                                Margin="0,8,0,0"
+                                Click="RecomputeButton_Click"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
         </Grid>
 
         <Border Grid.Row="2"
