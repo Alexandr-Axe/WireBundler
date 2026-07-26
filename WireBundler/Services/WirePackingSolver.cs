@@ -18,7 +18,7 @@ namespace WireBundler.Services
         /// <summary>
         /// Number of evenly spaced angular directions used for fallback placements around a single wire.
         /// </summary>
-        private const int FallbackDirectionCount = 12;
+        private const int FallbackDirectionCount = 360;
 
         /// <summary>
         /// Solves the wire packing problem for the given input data.
@@ -38,15 +38,36 @@ namespace WireBundler.Services
 
             AppLog.Write(LogLevel.INF, $"Wire packing solver started with {inputData.Radii.Count} input radii.");
 
-            List<double> sortedRadii = inputData.Radii
-                .OrderByDescending(r => r)
+            List<IEnumerable<double>> insertionOrders = new List<IEnumerable<double>>
+            {
+                inputData.Radii.OrderByDescending(r => r), //DESC
+                inputData.Radii.OrderBy(r => r),           //ASC
+                CreateAlternatingOrder(inputData.Radii)    //ALTERNATING
+            };
+
+            List<BundleResult> allResults = insertionOrders
+                .Select(order => SolveWithOrder(order.ToList()))
                 .ToList();
 
-            AppLog.Write(LogLevel.DEB, $"Radii sorted in descending order: {string.Join("; ", sortedRadii.Select(r => r.ToString("F2")))}");
+            BundleResult bestResult = allResults
+                .OrderBy(result => result.BundleRadius)
+                .First();
 
+            AppLog.Write(LogLevel.INF, $"Wire packing solver finished. Best bundle diameter {bestResult.BundleDiameter:F2} mm.");
+
+            return bestResult;
+        }
+
+        /// <summary>
+        /// Solves the wire packing problem using a specific order of radii.
+        /// </summary>
+        /// <param name="radii">The list of wire radii in the order they should be placed.</param>
+        /// <returns>The result of the wire packing solution.</returns>
+        private BundleResult SolveWithOrder(List<double> radii)
+        {
             BundleResult result = new();
 
-            foreach (double newWireRadius in sortedRadii)
+            foreach (double newWireRadius in radii)
             {
                 AppLog.Write(LogLevel.DEB, $"Placing wire with radius {newWireRadius:F2}.");
 
@@ -55,7 +76,7 @@ namespace WireBundler.Services
 
                 AppLog.Write(LogLevel.DEB, $"Placed wire: r={newPlacement.Radius:F2}, x={newPlacement.X:F2}, y={newPlacement.Y:F2}");
             }
-            
+
             RecenterLayout(result.Wires);
 
             AppLog.Write(LogLevel.INF, "Recentered wire layout before final bundle radius calculation.");
@@ -64,6 +85,41 @@ namespace WireBundler.Services
             AppLog.Write(LogLevel.INF, $"Wire packing solver finished. Bundle diameter: {result.BundleDiameter:F2} mm.");
 
             return result;
+        }
+
+        /// <summary>
+        /// Creates an alternating order of radii, starting with the largest, then the smallest, and so on.
+        /// </summary>
+        /// <param name="radii">The list of wire radii.</param>
+        /// <returns>The list of radii in alternating order.</returns>
+        private List<double> CreateAlternatingOrder(List<double> radii)
+        {
+            List<double> sorted = radii
+                .OrderByDescending(r => r)
+                .ToList();
+
+            List<double> alternating = new List<double>();
+
+            int left = 0;
+            int right = sorted.Count - 1;
+
+            while (left < right)
+            {
+                if (left < right)
+                {
+                    alternating.Add(sorted[left++]);
+                    alternating.Add(sorted[right--]);
+                }
+            }
+
+            if(left == right)
+            {
+                alternating.Add(sorted[left]);
+            }
+
+            AppLog.Write(LogLevel.DEB, $"Created alternating insertion order: {string.Join("; ", alternating.Select(r => r.ToString("F2")))}");
+
+            return alternating;
         }
 
         /// <summary>
