@@ -35,6 +35,37 @@ namespace WireBundler.Services
         public double FineAngularOffsetDegrees { get; set; } = 15.0;
 
         /// <summary>
+        /// Solves the wire packing problem for the given input data and specified order of radii (USED FOR BENCHMARK)
+        /// </summary>
+        /// <param name="inputData"></param>
+        /// <param name="orderLabel"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public BundleResult Solve(InputData inputData, string orderLabel)
+        {
+            if (inputData == null || inputData.Radii.Count == 0)
+            {
+                AppLog.Write(LogLevel.ERR, "WirePackingSolver.Solve(orderLabel) failed because input data is null or empty.");
+                throw new ArgumentException("Input data is null or empty");
+            }
+
+            List<double> radii = inputData.Radii.ToList();
+
+            IEnumerable<double> orderedRadii = orderLabel switch
+            {
+                "DESC" => radii.OrderByDescending(r => r),
+                "ASC" => radii.OrderBy(r => r),
+                "ALT" => CreateAlternatingOrder(radii),
+                _ => radii.OrderByDescending(r => r)
+            };
+
+            AppLog.Write(LogLevel.INF,
+                $"Wire packing solver started with {radii.Count} input radii using order '{orderLabel}'.");
+
+            return SolveWithOrder(orderedRadii.ToList());
+        }
+
+        /// <summary>
         /// Solves the wire packing problem for the given input data.
         /// </summary>
         /// <param name="inputData">Input data containing all wire radii.</param>
@@ -54,9 +85,9 @@ namespace WireBundler.Services
 
             List<IEnumerable<double>> insertionOrders = new List<IEnumerable<double>>
             {
-                inputData.Radii.OrderByDescending(r => r), //DESC
-                inputData.Radii.OrderBy(r => r),           //ASC
-                CreateAlternatingOrder(inputData.Radii)    //ALTERNATING
+                inputData.Radii.OrderByDescending(r => r),
+                inputData.Radii.OrderBy(r => r),
+                CreateAlternatingOrder(inputData.Radii)
             };
 
             List<BundleResult> allResults = insertionOrders

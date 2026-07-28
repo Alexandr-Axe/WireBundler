@@ -5,59 +5,71 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WireBundler"
         mc:Ignorable="d"
-        Title="Wire Bundle Optimiser" Height="650" Width="1000" MinHeight="500" MinWidth="800" WindowStartupLocation="CenterScreen">
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        Title="Wire Bundle Optimiser"
+        Height="650"
+        Width="1000"
+        MinHeight="500"
+        MinWidth="800"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Tools">
+                <MenuItem Header="Open benchmark window"
+                          Click="OpenBenchmarkWindow_Click"/>
+            </MenuItem>
+        </Menu>
 
-        <TextBlock Grid.Row="0"
-                   Text="Wire Bundle Optimiser"
-                   FontSize="26"
-                   FontWeight="Bold"
-                   Margin="0,0,0,16"/>
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="3*"/>
-            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0"
+                       Text="Wire Bundle Optimiser"
+                       FontSize="26"
+                       FontWeight="Bold"
+                       Margin="0,0,0,16"/>
 
-            <Border Grid.Column="0"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Padding="12"
-                    Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Input"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8"/>
+            <Grid Grid.Row="1" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
 
-                    <Button x:Name="LoadFileButton"
-                            Content="Load Input File"
-                            Width="140"
-                            Height="32"
-                            Margin="0,0,0,8"
-                            Click="LoadFileButton_Click"/>
+                <Border Grid.Column="0"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12"
+                        Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="Input"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
 
-                    <TextBlock x:Name="SelectedFileTextBlock"
-                               Text="No file loaded yet."
-                               Foreground="DimGray"
-                               Margin="0,0,0,4"/>
+                        <Button x:Name="LoadFileButton"
+                                Content="Load Input File"
+                                Width="140"
+                                Height="32"
+                                Margin="0,0,0,8"
+                                Click="LoadFileButton_Click"/>
 
-                    <TextBlock x:Name="InputStatusTextBlock"
-                               Text="Waiting for input."
-                               Foreground="DimGray"/>
-                </StackPanel>
-            </Border>
+                        <TextBlock x:Name="SelectedFileTextBlock"
+                                   Text="No file loaded yet."
+                                   Foreground="DimGray"
+                                   Margin="0,0,0,4"/>
 
-            <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="InputStatusTextBlock"
+                                   Text="Waiting for input."
+                                   Foreground="DimGray"/>
+                    </StackPanel>
+                </Border>
 
-                <Border BorderBrush="Gray"
+                <Border Grid.Column="1"
+                        BorderBrush="Gray"
                         BorderThickness="1"
                         CornerRadius="6"
                         Padding="12">
@@ -90,71 +102,27 @@
                                  VerticalScrollBarVisibility="Auto"/>
                     </StackPanel>
                 </Border>
-
-                <Border BorderBrush="Gray"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        Padding="12"
-                        Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Solver debug settings"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,8"/>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="Fallback directions:"
-                                       Width="140"/>
-                            <TextBox x:Name="FallbackDirectionCountTextBox"
-                                     Width="60"
-                                     Text="8"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="Coarse survivors:"
-                                       Width="140"/>
-                            <TextBox x:Name="CoarseSurvivorCountTextBox"
-                                     Width="60"
-                                     Text="2"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="Fine offset (deg):"
-                                       Width="140"/>
-                            <TextBox x:Name="FineAngularOffsetDegreesTextBox"
-                                     Width="60"
-                                     Text="15"/>
-                        </StackPanel>
-
-                        <Button Content="Recompute with current settings"
-                                Width="220"
-                                Height="28"
-                                Margin="0,8,0,0"
-                                Click="RecomputeButton_Click"/>
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </Grid>
-
-        <Border Grid.Row="2"
-                BorderBrush="Gray"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="12">
-            <Grid>
-                <TextBlock Text="Visualization area"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Top"
-                           Margin="0,8,0,0"/>
-
-                <Canvas x:Name="VisualizationCanvas"
-                        Background="#FFF8F8F8"
-                        Margin="0,40,0,0"
-                        SizeChanged="VisualizationCanvas_SizeChanged"/>
             </Grid>
-        </Border>
-    </Grid>
+
+            <Border Grid.Row="2"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12">
+                <Grid>
+                    <TextBlock Text="Visualization area"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"
+                               Margin="0,8,0,0"/>
+
+                    <Canvas x:Name="VisualizationCanvas"
+                            Background="#FFF8F8F8"
+                            Margin="0,40,0,0"
+                            SizeChanged="VisualizationCanvas_SizeChanged"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
 </Window>
