@@ -7,6 +7,10 @@ using WireBundler.Services;
 
 namespace WireBundler.Views
 {
+    /// <summary>
+    /// WPF window that provides UI controls to run the solver benchmark, show progress, and collect results.
+    /// Allows running benchmark sweeps and exporting aggregated results.
+    /// </summary>
     public partial class BenchmarkWindow : Window
     {
         private static readonly string[] AllOrderLabels = { "DESC", "ASC", "ALT" };

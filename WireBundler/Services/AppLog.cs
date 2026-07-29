@@ -5,6 +5,10 @@ using WireBundler.Infrastructure;
 
 namespace WireBundler.Services
 {
+    /// <summary>
+    /// Lightweight application logging facade that delegates logging to an underlying <see cref="WireBundler.Infrastructure.Logger"/>.
+    /// Provides simple initialization and a centralized Write method used across the application.
+    /// </summary>
     public static class AppLog
     {
         private static Logger? _logger;
