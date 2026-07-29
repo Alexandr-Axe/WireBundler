@@ -31,6 +31,9 @@ namespace WireBundler.Services
             Action<int, int>? reportProgress,
             Action<(int fallbackDirections, int survivors, double fineOffset), double, long>? reportResult)
         {
+#if !DEBUG
+            throw new InvalidOperationException("Benchmarking is only available in DEBUG builds.");
+#else
             if (string.IsNullOrWhiteSpace(inputFilePath))
                 throw new ArgumentException("Input file path must not be empty.");
 
@@ -38,7 +41,6 @@ namespace WireBundler.Services
                 throw new FileNotFoundException($"Input file not found: {inputFilePath}");
 
             InputParser parser = new InputParser();
-            WirePackingSolver solver = new WirePackingSolver();
 
             InputData inputData = parser.LoadFromFile(inputFilePath);
 
@@ -62,9 +64,10 @@ namespace WireBundler.Services
                 {
                     for (double fineOffset = Config.MinFineAngularOffset; fineOffset <= Config.MaxFineAngularOffset; fineOffset += Config.FineAngularOffsetStep)
                     {
-                        solver.FallbackDirectionCount = fallbackDirections;
-                        solver.CoarseSurvivorCount = survivors;
-                        solver.FineAngularOffsetDegrees = fineOffset;
+                        WirePackingSolver solver = new WirePackingSolver(
+                            fallbackDirectionCount: fallbackDirections,
+                            coarseSurvivorCount: survivors,
+                            fineAngularOffsetDegrees: fineOffset);
 
                         Stopwatch stopwatch = Stopwatch.StartNew();
                         BundleResult result = solver.Solve(inputData, orderLabel);
@@ -98,6 +101,9 @@ namespace WireBundler.Services
                     }
                 }
             }
+
+#endif
+
         }
     }
 }

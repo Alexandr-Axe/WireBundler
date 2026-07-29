@@ -23,6 +23,10 @@ namespace WireBundler.Views
         {
             InitializeComponent();
 
+#if !DEBUG
+            BenchmarkMenuItem.Visibility = Visibility.Collapsed;
+#endif
+
             string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WireBundler.log");
             AppLog.Initialize(logFilePath);
             AppLog.Write(LogLevel.INF, "Application started.");
@@ -102,9 +106,11 @@ namespace WireBundler.Views
 
         private void OpenBenchmarkWindow_Click(object sender, RoutedEventArgs e)
         {
+#if DEBUG
             BenchmarkWindow benchmarkWindow = new BenchmarkWindow();
             benchmarkWindow.Owner = this;
             benchmarkWindow.Show();
+#endif
         }
     }
 }

@@ -14,10 +14,30 @@ namespace WireBundler.Services
         /// Small tolerance used to reduce floating-point comparison errors.
         /// </summary>
         private const double Epsilon = 1e-6;
-        public int FallbackDirectionCount { get; set; } = 7;
-        public int CoarseSurvivorCount { get; set; } = 1;
-        public double FineAngularOffsetDegrees { get; set; } = 0.0;
-        public int MaxCandidateCount { get; set; } = 4;
+        public int FallbackDirectionCount { get; }
+        public int CoarseSurvivorCount { get; }
+        public double FineAngularOffsetDegrees { get; }
+        public int MaxCandidateCount { get; }
+
+#if DEBUG
+        public WirePackingSolver(int fallbackDirectionCount = 7, int coarseSurvivorCount = 1, double fineAngularOffsetDegrees = 0.0, int maxCandidateCount = 20)
+        {
+            FallbackDirectionCount = fallbackDirectionCount;
+            CoarseSurvivorCount = coarseSurvivorCount;
+            FineAngularOffsetDegrees = fineAngularOffsetDegrees;
+            MaxCandidateCount = maxCandidateCount;
+        }
+#else
+        public WirePackingSolver()
+        {
+            FallbackDirectionCount = 4;
+            CoarseSurvivorCount = 1;
+            FineAngularOffsetDegrees = 0.0;
+            MaxCandidateCount = 20;
+        }
+#endif
+
+
 
         /// <summary>
         /// Solves the wire packing problem for the given input data and specified order of radii (USED FOR BENCHMARK)

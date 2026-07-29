@@ -13,7 +13,7 @@
         WindowStartupLocation="CenterScreen">
     <DockPanel>
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="Tools">
+            <MenuItem x:Name="BenchmarkMenuItem" Header="Tools">
                 <MenuItem Header="Open benchmark window"
                           Click="OpenBenchmarkWindow_Click"/>
             </MenuItem>
