@@ -2,21 +2,12 @@
 {
     public class BenchmarkConfig
     {
-        public int FallbackDirectionStart { get; init; }
-        public int FallbackDirectionLimit { get; init; }
-        public int FallbackDirectionStep { get; init; }
-        public int SurvivorCountLimit { get; init; }
-        public double MinFineAngularOffset { get; init; }
-        public double MaxFineAngularOffset { get; init; }
-        public double FineAngularOffsetStep { get; init; }
-
-        public string FallbackDescription =>
-            $"Fallback directions: {FallbackDirectionStart} .. {FallbackDirectionLimit} step {FallbackDirectionStep}";
-
-        public string SurvivorDescription =>
-            $"Coarse survivors: 1 .. {SurvivorCountLimit}";
-
-        public string FineOffsetDescription =>
-            $"Fine offset: {MinFineAngularOffset} .. {MaxFineAngularOffset} step {FineAngularOffsetStep}";
+        public double MinFineAngularOffset { get; set; } = 0.0;
+        public double MaxFineAngularOffset { get; set; } = 15.0;
+        public double FineAngularOffsetStep { get; set; } = 1.0;
+        public int SurvivorCountLimit { get; set; } = 2;
+        public int FallbackDirectionStart { get; set; } = 4;
+        public int FallbackDirectionLimit { get; set; } = 12;
+        public int FallbackDirectionStep { get; set; } = 1;
     }
 }

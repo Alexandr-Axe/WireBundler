@@ -37,19 +37,58 @@
 
                     <TextBlock Text="Input file path:"
                                Margin="0,0,0,4"/>
+                    
                     <TextBox x:Name="BenchmarkInputFileTextBox"
                              Width="220"
                              Margin="0,0,0,4"
                              Text="input.txt"/>
 
-                    <TextBlock Text="{Binding FallbackDescription}"
+                    <TextBlock Text="Fallback directions"
+                               FontWeight="SemiBold"
                                Margin="0,8,0,4"/>
 
-                    <TextBlock Text="{Binding SurvivorDescription}"
-                               Margin="0,0,0,4"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Start:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding FallbackDirectionStart, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
-                    <TextBlock Text="{Binding FineOffsetDescription}"
-                               Margin="0,0,0,4"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Limit:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding FallbackDirectionLimit, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Step:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding FallbackDirectionStep, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Coarse survivors"
+                               FontWeight="SemiBold"
+                               Margin="0,8,0,4"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Survivor limit:" Width="120"/>
+                        <TextBox Width="60" Text="{Binding SurvivorCountLimit, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Fine offset" 
+                               FontWeight="SemiBold"
+                               Margin="0,8,0,4"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Min:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding MinFineAngularOffset, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Max:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding MaxFineAngularOffset, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Step:" Width="80"/>
+                        <TextBox Width="60" Text="{Binding FineAngularOffsetStep, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
                     <Button x:Name="RunBenchmarkButton"
                             Content="Run benchmark"
@@ -92,13 +131,14 @@
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Auto"/>
 
-                    <TextBlock Text="Estimated total time:"
-                               FontWeight="SemiBold"
-                               Margin="0,8,0,4"/>
-
-                    <TextBlock x:Name="EstimatedTotalTimeTextBlock"
-                               Text="-"
-                               Margin="0,0,0,4"/>
+                    <TextBlock x:Name="CurrentConfigTextBlock"
+                               Text="Testing: —"
+                               Margin="0,4,0,4"
+                               TextWrapping="Wrap" />
+                    
+                    <CheckBox x:Name="RunAllOrdersCheckBox"
+                              Content="Run all insertion orders (DESC, ASC, ALT)"
+                              Margin="0,4,0,4" />
                 </StackPanel>
             </Border>
         </Grid>

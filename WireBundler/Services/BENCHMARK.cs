@@ -14,30 +14,21 @@ namespace WireBundler.Services
     /// </summary>
     public static class BENCHMARK
     {
-        const double MinFineAngularOffset = 0.0; //0,180,1,20,4,180,1
-        const double MaxFineAngularOffset = 15.0;
-        const double FineAngularOffsetStep = 1.0;
-        const int SurvivorCountLimit = 2;
-        const int FallbackDirectionStart = 4;
-        const int FallbackDirectionLimit = 12;
-        const int FallbackDirectionStep = 1;
+        public static BenchmarkConfig Config { get; } = new BenchmarkConfig();
 
-        public static BenchmarkConfig CurrentConfig =>
-        new BenchmarkConfig
-        {
-            FallbackDirectionStart = FallbackDirectionStart,
-            FallbackDirectionLimit = FallbackDirectionLimit,
-            FallbackDirectionStep = FallbackDirectionStep,
-            SurvivorCountLimit = SurvivorCountLimit,
-            MinFineAngularOffset = MinFineAngularOffset,
-            MaxFineAngularOffset = MaxFineAngularOffset,
-            FineAngularOffsetStep = FineAngularOffsetStep
-        };
-
+        /// <summary>
+        /// Runs a benchmark of the WirePackingSolver with varying parameters and reports progress and results.
+        /// </summary>
+        /// <param name="inputFilePath">The path to the input file.</param>
+        /// <param name="orderLabel">The label for the insertion order.</param>
+        /// <param name="reportProgress">The action to report progress.</param>
+        /// <param name="reportResult">The action to report results.</param>
+        /// <exception cref="ArgumentException">Thrown when the input file path is invalid.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the input file is not found.</exception>
         public static void RunSolverBenchmark(
             string inputFilePath,
             string orderLabel,
-            Action<int, int, double?>? reportProgress,
+            Action<int, int>? reportProgress,
             Action<(int fallbackDirections, int survivors, double fineOffset), double, long>? reportResult)
         {
             if (string.IsNullOrWhiteSpace(inputFilePath))
@@ -51,11 +42,11 @@ namespace WireBundler.Services
 
             InputData inputData = parser.LoadFromFile(inputFilePath);
 
-            int fallbackCount = ((FallbackDirectionLimit - FallbackDirectionStart) / FallbackDirectionStep) + 1;
-            int fineOffsetCount = (int)Math.Floor((MaxFineAngularOffset - MinFineAngularOffset) / FineAngularOffsetStep) + 1;
-            int k = Math.Clamp(((SurvivorCountLimit - 1 - FallbackDirectionStart) / FallbackDirectionStep) + 1, 0, fallbackCount);
-            int arithmeticSum = k * (2 * FallbackDirectionStart + (k - 1) * FallbackDirectionStep) / 2;
-            int survivorSum = arithmeticSum + (fallbackCount - k) * SurvivorCountLimit;
+            int fallbackCount = ((Config.FallbackDirectionLimit - Config.FallbackDirectionStart) / Config.FallbackDirectionStep) + 1;
+            int fineOffsetCount = (int)Math.Floor((Config.MaxFineAngularOffset - Config.MinFineAngularOffset) / Config.FineAngularOffsetStep) + 1;
+            int k = Math.Clamp(((Config.SurvivorCountLimit - 1 - Config.FallbackDirectionStart) / Config.FallbackDirectionStep) + 1, 0, fallbackCount);
+            int arithmeticSum = k * (2 * Config.FallbackDirectionStart + (k - 1) * Config.FallbackDirectionStep) / 2;
+            int survivorSum = arithmeticSum + (fallbackCount - k) * Config.SurvivorCountLimit;
             int totalCount = survivorSum * fineOffsetCount;
 
             int doneCount = 0;
@@ -63,13 +54,13 @@ namespace WireBundler.Services
             long sampleElapsedMs = 0;
             double estimatedTotalSeconds = 0.0;
 
-            for (int fallbackDirections = FallbackDirectionStart; fallbackDirections <= FallbackDirectionLimit; fallbackDirections += FallbackDirectionStep)
+            for (int fallbackDirections = Config.FallbackDirectionStart; fallbackDirections <= Config.FallbackDirectionLimit; fallbackDirections += Config.FallbackDirectionStep)
             {
-                int maxSurvivorsForThisFallback = Math.Min(SurvivorCountLimit, fallbackDirections);
+                int maxSurvivorsForThisFallback = Math.Min(Config.SurvivorCountLimit, fallbackDirections);
 
                 for (int survivors = 1; survivors <= maxSurvivorsForThisFallback; survivors++)
                 {
-                    for (double fineOffset = MinFineAngularOffset; fineOffset <= MaxFineAngularOffset; fineOffset += FineAngularOffsetStep)
+                    for (double fineOffset = Config.MinFineAngularOffset; fineOffset <= Config.MaxFineAngularOffset; fineOffset += Config.FineAngularOffsetStep)
                     {
                         solver.FallbackDirectionCount = fallbackDirections;
                         solver.CoarseSurvivorCount = survivors;
@@ -103,8 +94,7 @@ namespace WireBundler.Services
 
                         reportProgress?.Invoke(
                             doneCount,
-                            totalCount,
-                            estimatedTotalSeconds);
+                            totalCount);
                     }
                 }
             }

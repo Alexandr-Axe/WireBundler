@@ -14,33 +14,18 @@ namespace WireBundler.Services
         /// Small tolerance used to reduce floating-point comparison errors.
         /// </summary>
         private const double Epsilon = 1e-6;
-        /*
-        /// <summary>
-        /// Number of evenly spaced angular directions used for fallback placements around a single wire.
-        /// </summary>
-        private const int FallbackDirectionCount = 8;
-
-        /// <summary>
-        /// Number of coarse survivor placements to keep for further refinement in the fine search phase.
-        /// </summary>
-        private const int CoarseSurvivorCount = 2;
-
-        /// <summary>
-        /// Angular offset in degrees used for fine placement attempts around a single wire.
-        /// </summary>
-        private const double FineAngularOffsetDegrees = 15.0;
-        */
-        public int FallbackDirectionCount { get; set; } = 8;
-        public int CoarseSurvivorCount { get; set; } = 2;
-        public double FineAngularOffsetDegrees { get; set; } = 15.0;
+        public int FallbackDirectionCount { get; set; } = 7;
+        public int CoarseSurvivorCount { get; set; } = 1;
+        public double FineAngularOffsetDegrees { get; set; } = 0.0;
+        public int MaxCandidateCount { get; set; } = 4;
 
         /// <summary>
         /// Solves the wire packing problem for the given input data and specified order of radii (USED FOR BENCHMARK)
         /// </summary>
-        /// <param name="inputData"></param>
-        /// <param name="orderLabel"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="inputData">The input data containing the wire radii.</param>
+        /// <param name="orderLabel">The label for the insertion order.</param>
+        /// <returns>Returns the result of the wire packing solution.</returns>
+        /// <exception cref="ArgumentException">Thrown when the input is null or contains no radii.</exception>
         public BundleResult Solve(InputData inputData, string orderLabel)
         {
             if (inputData == null || inputData.Radii.Count == 0)
@@ -70,9 +55,7 @@ namespace WireBundler.Services
         /// </summary>
         /// <param name="inputData">Input data containing all wire radii.</param>
         /// <returns>A bundle result containing wire positions and bundle radius.</returns>
-        /// <exception cref="ArgumentException">
-        /// Thrown when the input is null or contains no radii.
-        /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the input is null or contains no radii.</exception>
         public BundleResult Solve(InputData inputData)
         {
             if (inputData == null || inputData.Radii.Count == 0)
@@ -198,9 +181,9 @@ namespace WireBundler.Services
         /// <param name="placedWires">The wires that are already placed.</param>
         /// <param name="candidateWire">The candidate wire placement being evaluated.</param>
         /// <returns>The required bundle radius after adding the candidate wire.</returns>
-        private double CalculateBundleRadius(List<WirePlacement> placedWires, WirePlacement candidateWire)
+        private double CalculateBundleRadius(List<WirePlacement> placedWires, WirePlacement candidateWire, double currentBundleRadius)
         {
-            double currentBundleRadius = CalculateBundleRadius(placedWires);
+            //double currentBundleRadius = CalculateBundleRadius(placedWires);
 
             double candidateDistanceFromBundleCenter = Math.Sqrt(candidateWire.X * candidateWire.X + candidateWire.Y * candidateWire.Y);
 
@@ -244,6 +227,33 @@ namespace WireBundler.Services
         }
 
         /// <summary>
+        /// Inserts an item into a bounded top-k list, maintaining the order based on radius and ensuring the list does not exceed the specified maximum count.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="topK"></param>
+        /// <param name="item"></param>
+        /// <param name="radius"></param>
+        /// <param name="maxCount"></param>
+        private static void InsertIntoBoundedTopK<T>(List<(T Item, double Radius)> topK, T item, double radius, int maxCount)
+        {
+            if (topK.Count < maxCount)
+            {
+                int insertAt = topK.Count;
+                while (insertAt > 0 && radius < topK[insertAt - 1].Radius)
+                    insertAt--;
+                topK.Insert(insertAt, (item, radius));
+            }
+            else if (radius < topK[topK.Count - 1].Radius)
+            {
+                int insertAt = topK.Count - 1;
+                while (insertAt > 0 && radius < topK[insertAt - 1].Radius)
+                    insertAt--;
+                topK.Insert(insertAt, (item, radius));
+                topK.RemoveAt(topK.Count - 1);
+            }
+        }
+
+        /// <summary>
         /// Finds the best placement for a new wire based on the already placed wires and the radius of the new wire.
         /// </summary>
         /// <param name="alreadyPlacedWires">The wires that are already placed.</param>
@@ -256,10 +266,12 @@ namespace WireBundler.Services
         {
             List<WirePlacement> allCandidatePlacements = new();
 
+            double currentBundleRadius = CalculateBundleRadius(alreadyPlacedWires);
+
             foreach (WirePlacement placedWire in alreadyPlacedWires)
             {
                 allCandidatePlacements.AddRange(
-                    GetFallbackPlacementsAroundOneWire(placedWire, newWireRadius, alreadyPlacedWires));
+                    GetFallbackPlacementsAroundOneWire(placedWire, newWireRadius, alreadyPlacedWires, currentBundleRadius));
             }
 
             for (int firstIndex = 0; firstIndex < alreadyPlacedWires.Count; firstIndex++)
@@ -279,7 +291,21 @@ namespace WireBundler.Services
 
             AppLog.Write(LogLevel.DEB, $"Generated {allCandidatePlacements.Count} candidate placements for wire radius {newWireRadius:F2}.");
 
-            List<WirePlacement> validCandidatePlacements = allCandidatePlacements
+            List<WirePlacement> deduplicatedCandidatePlacements = new();
+            HashSet<(long, long)> seenGridKeys = new();
+
+            foreach (WirePlacement candidate in allCandidatePlacements)
+            {
+                long gridX = (long)Math.Round(candidate.X / Epsilon);
+                long gridY = (long)Math.Round(candidate.Y / Epsilon);
+
+                if (seenGridKeys.Add((gridX, gridY)))
+                    deduplicatedCandidatePlacements.Add(candidate);            
+            }
+
+            AppLog.Write(LogLevel.DEB, $"Deduplicated {allCandidatePlacements.Count} candidates to {deduplicatedCandidatePlacements.Count}.");
+
+            List<WirePlacement> validCandidatePlacements = deduplicatedCandidatePlacements
                 .Where(candidatePlacement =>
                     !DoesOverlapWithAnyPlacedWire(candidatePlacement, alreadyPlacedWires))
                 .ToList();
@@ -292,23 +318,24 @@ namespace WireBundler.Services
                 throw new InvalidOperationException("No valid placement found for the next wire.");
             }
 
-            WirePlacement bestPlacement = validCandidatePlacements[0];
-            double smallestBundleRadius = CalculateBundleRadius(alreadyPlacedWires, bestPlacement);
+            int maxCandidatesToKeep = Math.Max(1, MaxCandidateCount);
 
-            for (int candidateIndex = 1; candidateIndex < validCandidatePlacements.Count; candidateIndex++)
+            var scoredCandidates = new List<(WirePlacement Placement, double Radius)>(maxCandidatesToKeep);
+
+            foreach (WirePlacement candidate in validCandidatePlacements)
             {
-                WirePlacement currentCandidate = validCandidatePlacements[candidateIndex];
-                double currentCandidateBundleRadius =
-                    CalculateBundleRadius(alreadyPlacedWires, currentCandidate);
+                double radius = CalculateBundleRadius(alreadyPlacedWires, candidate, currentBundleRadius);
 
-                if (currentCandidateBundleRadius < smallestBundleRadius)
-                {
-                    smallestBundleRadius = currentCandidateBundleRadius;
-                    bestPlacement = currentCandidate;
-                }
+                InsertIntoBoundedTopK(scoredCandidates, candidate, radius, maxCandidatesToKeep);
             }
 
-            AppLog.Write(LogLevel.DEB, $"Best placement selected: r={bestPlacement.Radius:F2}, x={bestPlacement.X:F2}, y={bestPlacement.Y:F2}, bundle radius={smallestBundleRadius:F2}");
+            WirePlacement bestPlacement = scoredCandidates[0].Placement;
+            double smallestBundleRadius = scoredCandidates[0].Radius;
+
+            AppLog.Write(LogLevel.DEB,
+                $"Best placement selected (after top-k): r={bestPlacement.Radius:F2}, " +
+                $"x={bestPlacement.X:F2}, y={bestPlacement.Y:F2}, " +
+                $"bundle radius={smallestBundleRadius:F2}");
 
             return bestPlacement;
         }
@@ -430,7 +457,7 @@ namespace WireBundler.Services
         /// <param name="placedWire">The wire that is already placed.</param>
         /// <param name="newWireRadius">The radius of the new wire.</param>
         /// <returns>An enumeration of possible placements for the new wire.</returns>
-        private IEnumerable<WirePlacement> GetFallbackPlacementsAroundOneWire(WirePlacement placedWire, double newWireRadius, List<WirePlacement> alreadyPlacedWires)
+        private IEnumerable<WirePlacement> GetFallbackPlacementsAroundOneWire(WirePlacement placedWire, double newWireRadius, List<WirePlacement> alreadyPlacedWires, double currentBundleRadius)
         {
             if (FallbackDirectionCount < 1)
             {
@@ -448,14 +475,14 @@ namespace WireBundler.Services
             List<WirePlacement> coarseCandidates = GenerateFallbackCandidatesForAngles(placedWire, newWireRadius, fallbackAngles)
                 .ToList();
 
-            List<(WirePlacement placement, double radius)> scoredCoarse = coarseCandidates
-                .Select(candidate => (Placement: candidate, Radius: CalculateBundleRadius(alreadyPlacedWires, candidate)))
-                .OrderBy(pair => pair.Radius)
-                .ToList();
+            List<(WirePlacement placement, double radius)> bestCoarse = new(CoarseSurvivorCount);
 
-            List<(WirePlacement placement, double radius)> bestCoarse = scoredCoarse
-                .Take(CoarseSurvivorCount)
-                .ToList();
+            foreach (WirePlacement candidate in coarseCandidates)
+            {
+                double radius = CalculateBundleRadius(alreadyPlacedWires, candidate, currentBundleRadius);
+
+                InsertIntoBoundedTopK(bestCoarse, candidate, radius, CoarseSurvivorCount);
+            }
 
             foreach (var (placement, radius) in bestCoarse)
             {
@@ -465,12 +492,14 @@ namespace WireBundler.Services
 
                 double fineOffsetRadians = FineAngularOffsetDegrees * Math.PI / 180.0;
 
-                List<double> fineAngles = new List<double>
-                {
-                    baseAngle - fineOffsetRadians,
-                    baseAngle,
-                    baseAngle + fineOffsetRadians
-                };
+                List<double> fineAngles = fineOffsetRadians > Epsilon ?
+                    new List<double>
+                    {
+                        baseAngle - fineOffsetRadians,
+                        baseAngle,
+                        baseAngle + fineOffsetRadians
+                    }
+                    : new List<double> { baseAngle };
 
                 allFallBackPlacements.AddRange(
                     GenerateFallbackCandidatesForAngles(placedWire, newWireRadius, fineAngles));
@@ -479,54 +508,6 @@ namespace WireBundler.Services
             AppLog.Write(LogLevel.DEB, $"Generated {allFallBackPlacements.Count} fallback candidates around one wire.");
 
             return allFallBackPlacements;
-
-            /*double distanceBetweenCenters = placedWire.Radius + newWireRadius;
-
-            for (int directionIndex = 0; directionIndex < FallbackDirectionCount; directionIndex++)
-            {
-                double angle = 2.0 * Math.PI * directionIndex / FallbackDirectionCount;
-
-                double offsetX = distanceBetweenCenters * Math.Cos(angle);
-                double offsetY = distanceBetweenCenters * Math.Sin(angle);
-
-                fallbackPlacements.Add(new WirePlacement
-                {
-                    Radius = newWireRadius,
-                    X = placedWire.X + offsetX,
-                    Y = placedWire.Y + offsetY
-                });
-            }*/
-
-            /*
-            fallbackPlacements.Add(new WirePlacement
-            {
-                Radius = newWireRadius,
-                X = placedWire.X + distanceBetweenCenters,
-                Y = placedWire.Y
-            });
-
-            fallbackPlacements.Add(new WirePlacement
-            {
-                Radius = newWireRadius,
-                X = placedWire.X - distanceBetweenCenters,
-                Y = placedWire.Y
-            });
-
-            fallbackPlacements.Add(new WirePlacement
-            {
-                Radius = newWireRadius,
-                X = placedWire.X,
-                Y = placedWire.Y + distanceBetweenCenters
-            });
-
-            fallbackPlacements.Add(new WirePlacement
-            {
-                Radius = newWireRadius,
-                X = placedWire.X,
-                Y = placedWire.Y - distanceBetweenCenters
-            });*/
-
-            //return fallbackPlacements;
         }
 
         /// <summary>
@@ -551,12 +532,9 @@ namespace WireBundler.Services
                 maxY = Math.Max(maxY, wire.Y + wire.Radius);
             }
 
-            // Calculate the center of the bounding box
-
             double centerX = (minX + maxX) / 2;
             double centerY = (minY + maxY) / 2;
 
-            // Recenter all wires around the origin
             foreach (WirePlacement wire in placedWires)
             {
                 wire.X -= centerX;
@@ -575,8 +553,6 @@ namespace WireBundler.Services
         /// <returns></returns>
         private IEnumerable<WirePlacement> GenerateFallbackCandidatesForAngles(WirePlacement placedWire, double newWireRadius, List<double> angles)
         {
-            List<WirePlacement> placements = new List<WirePlacement>();
-
             double distanceBetweenCenters = placedWire.Radius + newWireRadius;
 
             foreach (double angle in angles)
@@ -584,15 +560,13 @@ namespace WireBundler.Services
                 double offsetX = distanceBetweenCenters * Math.Cos(angle);
                 double offsetY = distanceBetweenCenters * Math.Sin(angle);
 
-                placements.Add(new WirePlacement
+                yield return new WirePlacement
                 {
                     Radius = newWireRadius,
                     X = placedWire.X + offsetX,
                     Y = placedWire.Y + offsetY
-                });
+                };
             }
-
-            return placements;
         }
     }
 }
