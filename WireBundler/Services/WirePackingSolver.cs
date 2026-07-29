@@ -247,30 +247,35 @@ namespace WireBundler.Services
         }
 
         /// <summary>
-        /// Inserts an item into a bounded top-k list, maintaining the order based on radius and ensuring the list does not exceed the specified maximum count.
+        /// Inserts an item into a bounded top-k list ordered by radius only.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="topK"></param>
-        /// <param name="item"></param>
-        /// <param name="radius"></param>
-        /// <param name="maxCount"></param>
-        private static void InsertIntoBoundedTopK<T>(List<(T Item, double Radius)> topK, T item, double radius, int maxCount)
+        private static void InsertIntoBoundedTopKByRadius<T>(List<(T Item, double Radius)> topK, T item, double radius, int maxCount)
         {
             if (topK.Count < maxCount)
             {
-                int insertAt = topK.Count;
-                while (insertAt > 0 && radius < topK[insertAt - 1].Radius)
-                    insertAt--;
+                int insertAt = FindInsertionIndex(topK, radius);
                 topK.Insert(insertAt, (item, radius));
+                return;
             }
-            else if (radius < topK[topK.Count - 1].Radius)
-            {
-                int insertAt = topK.Count - 1;
-                while (insertAt > 0 && radius < topK[insertAt - 1].Radius)
-                    insertAt--;
-                topK.Insert(insertAt, (item, radius));
-                topK.RemoveAt(topK.Count - 1);
-            }
+
+            double worstRadius = topK[topK.Count - 1].Radius;
+
+            if (radius >= worstRadius)
+                return;
+
+            int insertIndex = FindInsertionIndex(topK, radius);
+            topK.Insert(insertIndex, (item, radius));
+            topK.RemoveAt(topK.Count - 1);
+        }
+
+        private static int FindInsertionIndex<T>(List<(T Item, double Radius)> topK, double radius)
+        {
+            int insertAt = topK.Count;
+
+            while (insertAt > 0 && radius < topK[insertAt - 1].Radius)
+                insertAt--;
+
+            return insertAt;
         }
 
         /// <summary>
@@ -338,15 +343,35 @@ namespace WireBundler.Services
                 throw new InvalidOperationException("No valid placement found for the next wire.");
             }
 
+            foreach (WirePlacement candidate in validCandidatePlacements) 
+            {
+                int tangentCount = 0;
+
+                foreach (WirePlacement placedWire in alreadyPlacedWires)
+                {
+                    double dx = candidate.X - placedWire.X;
+                    double dy = candidate.Y - placedWire.Y;
+                    double distance = Math.Sqrt(dx * dx + dy * dy);
+                    double sumRadii = candidate.Radius + placedWire.Radius;
+
+                    if (Math.Abs(distance - sumRadii) <= Epsilon)
+                        tangentCount++;
+                }
+
+                candidate.TangentCount = tangentCount;
+            }
+
             int maxCandidatesToKeep = Math.Max(1, MaxCandidateCount);
 
-            var scoredCandidates = new List<(WirePlacement Placement, double Radius)>(maxCandidatesToKeep);
+            var scoredCandidates = new List<(WirePlacement Placement, double Radius, int TangentCount)>(maxCandidatesToKeep);
 
             foreach (WirePlacement candidate in validCandidatePlacements)
             {
                 double radius = CalculateBundleRadius(alreadyPlacedWires, candidate, currentBundleRadius);
 
-                InsertIntoBoundedTopK(scoredCandidates, candidate, radius, maxCandidatesToKeep);
+                int tangentCount = candidate.TangentCount;
+
+                InsertScoredPlacementIntoTopK(scoredCandidates, candidate, radius, tangentCount, maxCandidatesToKeep);
             }
 
             WirePlacement bestPlacement = scoredCandidates[0].Placement;
@@ -358,6 +383,62 @@ namespace WireBundler.Services
                 $"bundle radius={smallestBundleRadius:F2}");
 
             return bestPlacement;
+        }
+
+        /// <summary>
+        /// Inserts a scored wire placement into a bounded top-k list, ordered primarily by
+        /// bundle radius (ascending) and, for radii that are numerically tied, by tangent
+        /// count (descending), so placements tangent to more wires are preferred.
+        /// </summary>
+        private static void InsertScoredPlacementIntoTopK(
+            List<(WirePlacement Placement, double Radius, int TangentCount)> topK,
+            WirePlacement placement,
+            double radius,
+            int tangentCount,
+            int maxCount)
+        {
+            if (topK.Count < maxCount)
+            {
+                int insertAt = FindScoredInsertionIndex(topK, radius, tangentCount);
+                topK.Insert(insertAt, (placement, radius, tangentCount));
+                return;
+            }
+
+            var worst = topK[topK.Count - 1];
+
+            if (!IsBetter(radius, tangentCount, worst.Radius, worst.TangentCount))
+                return;
+
+            int insertIndex = FindScoredInsertionIndex(topK, radius, tangentCount);
+            topK.Insert(insertIndex, (placement, radius, tangentCount));
+            topK.RemoveAt(topK.Count - 1);
+        }
+
+        private static int FindScoredInsertionIndex(
+            List<(WirePlacement Placement, double Radius, int TangentCount)> topK,
+            double radius,
+            int tangentCount)
+        {
+            int insertAt = topK.Count;
+
+            while (insertAt > 0 && IsBetter(radius, tangentCount, topK[insertAt - 1].Radius, topK[insertAt - 1].TangentCount))
+                insertAt--;
+
+            return insertAt;
+        }
+
+        /// <summary>
+        /// Determines whether a candidate (radius, tangentCount) ranks better than another.
+        /// Smaller radius wins; if radii are numerically equal, higher tangent count wins.
+        /// </summary>
+        private static bool IsBetter(double radius, int tangentCount, double otherRadius, int otherTangentCount)
+        {
+            bool radiiAreEqual = Math.Abs(radius - otherRadius) < Epsilon;
+
+            if (radiiAreEqual)
+                return tangentCount > otherTangentCount;
+
+            return radius < otherRadius;
         }
 
         /// <summary>
@@ -501,7 +582,7 @@ namespace WireBundler.Services
             {
                 double radius = CalculateBundleRadius(alreadyPlacedWires, candidate, currentBundleRadius);
 
-                InsertIntoBoundedTopK(bestCoarse, candidate, radius, CoarseSurvivorCount);
+                InsertIntoBoundedTopKByRadius(bestCoarse, candidate, radius, CoarseSurvivorCount);
             }
 
             foreach (var (placement, radius) in bestCoarse)

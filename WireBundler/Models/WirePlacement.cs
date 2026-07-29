@@ -12,5 +12,10 @@ namespace WireBundler.Models
         public double Radius { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of tangents associated with this wire placement.
+        /// </summary>
+        public int TangentCount { get; set; } = 0;
     }
 }
