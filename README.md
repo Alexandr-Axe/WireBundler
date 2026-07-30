@@ -69,7 +69,7 @@ Plain text file, one radius per line, `#` starts a comment line:
 
 ## Algorithm
 
-See [`WireSolver-Doc.md`](./WireSolver-Doc.md) for a full explanation of the packing algorithm,
+See [`WireSolver-Doc.md`](WireBundler/WireSolver-Doc.md) for a full explanation of the packing algorithm,
 including the candidate generation rules, scoring/tie-break logic, and a step-by-step worked
 example using the descending (`DESC`) insertion order.
 
