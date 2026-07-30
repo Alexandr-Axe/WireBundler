@@ -9,7 +9,57 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
+    <None Remove="Resources\alternating.png" />
+    <None Remove="Resources\angleCalculation.png" />
+    <None Remove="Resources\circles\1.png" />
+    <None Remove="Resources\circles\2.png" />
+    <None Remove="Resources\circles\3.png" />
+    <None Remove="Resources\circles\4.png" />
+    <None Remove="Resources\circles\5.png" />
+    <None Remove="Resources\circles\6.png" />
+    <None Remove="Resources\heuristika.png" />
+    <None Remove="Resources\it_works.png" />
+    <None Remove="Resources\totalCount.png" />
+    <None Remove="Resources\Unit_circle.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\alternating.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\angleCalculation.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\1.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\2.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\3.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\4.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\5.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\circles\6.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\heuristika.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\it_works.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\totalCount.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Unit_circle.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>
