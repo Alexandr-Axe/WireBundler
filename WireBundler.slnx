@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="WireBundler.Tests/WireBundler.Tests.csproj" Id="7681b1ea-a577-46b8-bed1-ae60f69efd73" />
   <Project Path="WireBundler/WireBundler.csproj" />
 </Solution>
